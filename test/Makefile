@@ -5,7 +5,7 @@ test: build
 
 build:
 	make -C shared-lib all-via-docker
-	cd .. && capsule build
+	cd .. && capsule build && RUSTFLAGS="-C target-feature=-a" capsule build -n ckb-std-tests
 
 clean:
 	rm -rf ../build
