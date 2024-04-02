@@ -17,7 +17,16 @@ fn main() {
         build.include("c/ckb-c-stdlib");
         build.compile("dl-c-impl");
     }
-
+    if target_arch == "riscv64" && cfg!(feature = "atomic") {
+        let mut build = cc::Build::new();
+        build
+            .file("c/atomics.c")
+            .define("__SHARED_LIBRARY__", None)
+            .define("CKB_DECLARATION_ONLY", None);
+        setup_compiler_flags(&mut build);
+        build.include("c/ckb-c-stdlib");
+        build.compile("atomics");
+    }
     if target_arch == "riscv64" && cfg!(feature = "libc") {
         let mut build = cc::Build::new();
         build.file("c/libc.c").define("__SHARED_LIBRARY__", None);

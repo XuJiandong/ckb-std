@@ -15,6 +15,8 @@ use ckb_std::since::{EpochNumberWithFraction, Since};
 use ckb_std::{dynamic_loading, dynamic_loading_c_impl};
 #[cfg(target_arch = "riscv64")]
 use core::mem::size_of_val;
+use bytes;
+
 
 use crate::error::Error;
 
@@ -402,6 +404,19 @@ fn test_since() {
     );
 }
 
+fn test_atomic() {
+    let b = bytes::Bytes::copy_from_slice(&[0, 1, 2, 3]);
+
+    let b2 = b.slice(1..2);
+    assert_eq!(b2[0], 1);
+    assert_eq!(b2.len(), 1);
+
+    let v : Vec<u8> = b.into();
+    assert_eq!(v[1], 1);
+    assert_eq!(v.len(), 4);
+    debug!("test_atomic done");
+}
+
 pub fn main() -> Result<(), Error> {
     test_basic();
     test_load_data();
@@ -411,7 +426,7 @@ pub fn main() -> Result<(), Error> {
     test_high_level_apis();
     test_query();
     test_calc_data_hash();
-
+    
     #[cfg(target_arch = "riscv64")]
     unsafe {
         let mut context = ContextType::new();
@@ -424,5 +439,6 @@ pub fn main() -> Result<(), Error> {
     test_vm_version();
     test_current_cycles();
     test_since();
+    test_atomic();
     Ok(())
 }
