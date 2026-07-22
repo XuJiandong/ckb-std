@@ -249,13 +249,23 @@ impl EpochNumberWithFraction {
 
 impl PartialOrd for EpochNumberWithFraction {
     fn partial_cmp(&self, other: &EpochNumberWithFraction) -> Option<Ordering> {
+        let (self_index, self_len) = if self.length() == 0 {
+            (0, 1)
+        } else {
+            (self.index(), self.length())
+        };
+        let (other_index, other_len) = if other.length() == 0 {
+            (0, 1)
+        } else {
+            (other.index(), other.length())
+        };
         if self.number() < other.number() {
             Some(Ordering::Less)
         } else if self.number() > other.number() {
             Some(Ordering::Greater)
         } else {
-            let block_a = (self.index() as u128) * (other.length() as u128);
-            let block_b = (other.index() as u128) * (self.length() as u128);
+            let block_a = (self_index as u128) * (other_len as u128);
+            let block_b = (other_index as u128) * (self_len as u128);
             block_a.partial_cmp(&block_b)
         }
     }
@@ -284,5 +294,76 @@ impl core::ops::Add for EpochNumberWithFraction {
         let denominator = u64::try_from(denominator).ok()?;
 
         EpochNumberWithFraction::create(number, numerator, denominator)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_epoch_cmp_less_number() {
+        let a = EpochNumberWithFraction::new(1, 0, 10);
+        let b = EpochNumberWithFraction::new(2, 0, 10);
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Less));
+    }
+
+    #[test]
+    fn test_epoch_cmp_greater_number() {
+        let a = EpochNumberWithFraction::new(3, 0, 10);
+        let b = EpochNumberWithFraction::new(2, 0, 10);
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Greater));
+    }
+
+    #[test]
+    fn test_epoch_cmp_equal() {
+        let a = EpochNumberWithFraction::new(1, 5, 10);
+        let b = EpochNumberWithFraction::new(1, 5, 10);
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Equal));
+    }
+
+    #[test]
+    fn test_epoch_cmp_same_number_different_fraction() {
+        // epoch 1, index 3/12 vs epoch 1, index 2/8
+        // 3/12 = 1/4, 2/8 = 1/4 → equal
+        let a = EpochNumberWithFraction::new(1, 3, 12);
+        let b = EpochNumberWithFraction::new(1, 2, 8);
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Equal));
+    }
+
+    #[test]
+    fn test_epoch_cmp_same_number_less_fraction() {
+        // epoch 1, index 1/4 vs epoch 1, index 3/4
+        let a = EpochNumberWithFraction::new(1, 1, 4);
+        let b = EpochNumberWithFraction::new(1, 3, 4);
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Less));
+    }
+
+    #[test]
+    fn test_epoch_cmp_same_number_greater_fraction() {
+        let a = EpochNumberWithFraction::new(1, 3, 4);
+        let b = EpochNumberWithFraction::new(1, 1, 4);
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Greater));
+    }
+
+    #[test]
+    fn test_epoch_cmp_with_zero_length() {
+        let a = EpochNumberWithFraction::new_unchecked(1, 0, 0);
+        let b = EpochNumberWithFraction::new(1, 1, 4);
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Less));
+    }
+
+    #[test]
+    fn test_epoch_cmp_both_zero_length() {
+        let a = EpochNumberWithFraction::new_unchecked(1, 0, 0);
+        let b = EpochNumberWithFraction::new_unchecked(2, 0, 0);
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Less));
+    }
+
+    #[test]
+    fn test_epoch_cmp_same_number_both_zero_length() {
+        let a = EpochNumberWithFraction::new_unchecked(5, 0, 0);
+        let b = EpochNumberWithFraction::new_unchecked(5, 0, 0);
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Equal));
     }
 }
